@@ -1,10 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using ApplicationLayer.Dtos;
-using ApplicationLayer.Services;
+﻿using ApplicationLayer.Services;
 using ApplicationLayer.Interfaces;
 using DomainLayer.Models;
-using NSubstitute; // <-- Denna gör magin möjlig!
+using NSubstitute;
 using Xunit;
 
 namespace TournamentApi.UnitTests.Services
@@ -19,7 +16,7 @@ namespace TournamentApi.UnitTests.Services
             var mockTournamentRepo = Substitute.For<ITournamentRepository>();
             var gameService = new GameService(mockGameRepo, mockTournamentRepo);
 
-            // Vi simulerar att turneringen med ID 99 INTE finns (returnerar null)
+            // Simulate that the tournament is not found (returns null)
             mockTournamentRepo.GetByIdAsync(99).Returns(Task.FromResult<Tournament?>(null));
 
             var createDto = new GameCreateDTO
@@ -46,7 +43,7 @@ namespace TournamentApi.UnitTests.Services
 
             var existingTournament = new Tournament { Id = 1, Title = "Summer Cup", Description = "Warmup" };
 
-            // Vi säger till NSubstitute att returnera vår turnering när servicen frågar efter ID 1
+            // Simulate that the tournament exists when queried by ID 1
             mockTournamentRepo.GetByIdAsync(1).Returns(Task.FromResult<Tournament?>(existingTournament));
 
             var createDto = new GameCreateDTO
@@ -64,10 +61,8 @@ namespace TournamentApi.UnitTests.Services
             Assert.Equal("Quarter Final", result.Title);
             Assert.Equal(1, result.TournamentId);
 
-            // NSubstitute-verifiering: Kollade servicen verkligen att spelet sparades i repot?
+            // Verify that the repository's AddAsync method was actually called
             await mockGameRepo.Received(1).AddAsync(Arg.Any<Game>());
-
-
         }
 
         [Fact]
@@ -78,7 +73,7 @@ namespace TournamentApi.UnitTests.Services
             var mockTournamentRepo = Substitute.For<ITournamentRepository>();
             var gameService = new GameService(mockGameRepo, mockTournamentRepo);
 
-            // Vi simulerar att spelet med ID 999 inte finns i databasen (returnerar null)
+            // Simulate that the game does not exist in the database (returns null)
             mockGameRepo.GetByIdAsync(999).Returns(Task.FromResult<Game?>(null));
 
             // 2. Act
@@ -104,7 +99,7 @@ namespace TournamentApi.UnitTests.Services
                 TournamentId = 1
             };
 
-            // Vi simulerar att spelet med ID 5 faktiskt hittas i databasen
+            // Simulate that the game is successfully found in the database
             mockGameRepo.GetByIdAsync(5).Returns(Task.FromResult<Game?>(existingGame));
 
             // 2. Act
@@ -114,6 +109,47 @@ namespace TournamentApi.UnitTests.Services
             Assert.NotNull(result);
             Assert.Equal("Grand Final", result.Title);
             Assert.Equal(5, result.Id);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_ShouldReturnFalse_WhenGameDoesNotExist()
+        {
+            // 1. Arrange
+            var mockGameRepo = Substitute.For<IGameRepository>();
+            var mockTournamentRepo = Substitute.For<ITournamentRepository>();
+            var gameService = new GameService(mockGameRepo, mockTournamentRepo);
+
+            // Simulate that the game to delete is not found
+            mockGameRepo.GetByIdAsync(999).Returns(Task.FromResult<Game?>(null));
+
+            // 2. Act
+            var result = await gameService.DeleteAsync(999);
+
+            // 3. Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_ShouldReturnTrue_WhenGameIsSuccessfullyDeleted()
+        {
+            // 1. Arrange
+            var mockGameRepo = Substitute.For<IGameRepository>();
+            var mockTournamentRepo = Substitute.For<ITournamentRepository>();
+            var gameService = new GameService(mockGameRepo, mockTournamentRepo);
+
+            var existingGame = new Game { Id = 10, Title = "Match to delete" };
+
+            // Simulate that the game exists
+            mockGameRepo.GetByIdAsync(10).Returns(Task.FromResult<Game?>(existingGame));
+
+            // 2. Act
+            var result = await gameService.DeleteAsync(10);
+
+            // 3. Assert
+            Assert.True(result);
+
+            // Verify that the repository's DeleteAsync method was invoked with the actual Game object
+            await mockGameRepo.Received(1).DeleteAsync(existingGame);
         }
     }
 }
