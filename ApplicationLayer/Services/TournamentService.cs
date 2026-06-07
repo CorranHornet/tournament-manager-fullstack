@@ -3,7 +3,6 @@ using DomainLayer.Models;
 
 //using TournamentApi.Data;              // ❌ TA BORT (DbContext får inte vara här i Clean Arch service)
 using ApplicationLayer.Interfaces;
-using ApplicationLayer.Services;
 
 
 

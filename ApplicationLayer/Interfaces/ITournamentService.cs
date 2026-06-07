@@ -1,6 +1,6 @@
 ﻿using ApplicationLayer.Dtos;
 
-namespace ApplicationLayer.Services
+namespace ApplicationLayer.Interfaces
 {
     public interface ITournamentService
     {

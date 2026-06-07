@@ -1,7 +1,7 @@
 ﻿using ApplicationLayer.Services;
 using Microsoft.Extensions.DependencyInjection;
-using ApplicationLayer.Services;
 using TournamentApi.Services;
+using ApplicationLayer.Interfaces;
 
 namespace ApplicationLayer
 {
