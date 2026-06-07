@@ -1,4 +1,3 @@
-
 using ApplicationLayer;
 using ApplicationLayer.Services;
 using InfrastructureLayer;
@@ -12,13 +11,20 @@ namespace API
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowReactFrontend", policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            //builder.Services.AddScoped<ICalender, CalenderService>();
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -32,9 +38,11 @@ namespace API
             }
 
             app.UseHttpsRedirection();
+            
+            // IMPORTANT: This activates the CORS policy for incoming requests
+            app.UseCors("AllowReactFrontend");
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 
