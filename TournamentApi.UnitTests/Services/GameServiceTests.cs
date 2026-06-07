@@ -66,6 +66,54 @@ namespace TournamentApi.UnitTests.Services
 
             // NSubstitute-verifiering: Kollade servicen verkligen att spelet sparades i repot?
             await mockGameRepo.Received(1).AddAsync(Arg.Any<Game>());
+
+
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_ShouldReturnNull_WhenGameDoesNotExist()
+        {
+            // 1. Arrange
+            var mockGameRepo = Substitute.For<IGameRepository>();
+            var mockTournamentRepo = Substitute.For<ITournamentRepository>();
+            var gameService = new GameService(mockGameRepo, mockTournamentRepo);
+
+            // Vi simulerar att spelet med ID 999 inte finns i databasen (returnerar null)
+            mockGameRepo.GetByIdAsync(999).Returns(Task.FromResult<Game?>(null));
+
+            // 2. Act
+            var result = await gameService.GetByIdAsync(999);
+
+            // 3. Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_ShouldReturnGameResponseDto_WhenGameExists()
+        {
+            // 1. Arrange
+            var mockGameRepo = Substitute.For<IGameRepository>();
+            var mockTournamentRepo = Substitute.For<ITournamentRepository>();
+            var gameService = new GameService(mockGameRepo, mockTournamentRepo);
+
+            var existingGame = new Game
+            {
+                Id = 5,
+                Title = "Grand Final",
+                Time = DateTime.Now,
+                TournamentId = 1
+            };
+
+            // Vi simulerar att spelet med ID 5 faktiskt hittas i databasen
+            mockGameRepo.GetByIdAsync(5).Returns(Task.FromResult<Game?>(existingGame));
+
+            // 2. Act
+            var result = await gameService.GetByIdAsync(5);
+
+            // 3. Assert
+            Assert.NotNull(result);
+            Assert.Equal("Grand Final", result.Title);
+            Assert.Equal(5, result.Id);
         }
     }
 }
