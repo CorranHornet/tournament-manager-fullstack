@@ -1,4 +1,7 @@
-﻿using ApplicationLayer.Services;
+﻿using System;
+using System.Threading.Tasks;
+using ApplicationLayer.Dtos;
+using ApplicationLayer.Services;
 using ApplicationLayer.Interfaces;
 using DomainLayer.Models;
 using NSubstitute;
@@ -150,6 +153,31 @@ namespace TournamentApi.UnitTests.Services
 
             // Verify that the repository's DeleteAsync method was invoked with the actual Game object
             await mockGameRepo.Received(1).DeleteAsync(existingGame);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldReturnTrue_WhenGameIsSuccessfullyUpdated()
+        {
+            // 1. Arrange
+            var mockGameRepo = Substitute.For<IGameRepository>();
+            var mockTournamentRepo = Substitute.For<ITournamentRepository>();
+            var gameService = new GameService(mockGameRepo, mockTournamentRepo);
+
+            var existingGame = new Game { Id = 1, Title = "Old Title", TournamentId = 1 };
+
+            // Simulate that the game is successfully found when checked
+            mockGameRepo.GetByIdAsync(1).Returns(Task.FromResult<Game?>(existingGame));
+
+            var updateDto = new GameUpdateDTO
+            {
+                Title = "New Brilliant Title"
+            };
+
+            // 2. Act
+            var result = await gameService.UpdateAsync(1, updateDto);
+
+            // 3. Assert
+            Assert.True(result); // Asserts that your service returns true upon success
         }
     }
 }
