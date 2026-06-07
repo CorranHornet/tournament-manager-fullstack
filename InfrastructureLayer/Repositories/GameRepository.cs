@@ -47,10 +47,6 @@ namespace TournamentApi.Infrastructure.Repositories
         {
             await _context.SaveChangesAsync();
         }
-
-        public async Task<bool> TournamentExists(int tournamentId)
-        {
-            return await _context.Tournaments.AnyAsync(t => t.Id == tournamentId);
-        }
+      
     }
 }
