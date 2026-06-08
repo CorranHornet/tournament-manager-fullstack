@@ -1,0 +1,45 @@
+name: .NET Core Build and Test
+
+on:
+  push:
+    branches: [ main, master ]
+    # Only trigger this pipeline when changes occur in backend directories
+    paths:
+      - 'API/**'
+      - 'ApplicationLayer/**'
+      - 'DomainLayer/**'
+      - 'InfrastructureLayer/**'
+      - 'TournamentApi.UnitTests/**'
+      - '.github/workflows/dotnet.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'API/**'
+      - 'ApplicationLayer/**'
+      - 'DomainLayer/**'
+      - 'InfrastructureLayer/**'
+      - 'TournamentApi.UnitTests/**'
+      - '.github/workflows/dotnet.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        # Enable caching of NuGet packages to speed up subsequent builds
+        cache: true 
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Test
+      run: dotnet test TournamentApi.UnitTests/TournamentApi.UnitTests.csproj --configuration Release --no-build --verbosity normal
