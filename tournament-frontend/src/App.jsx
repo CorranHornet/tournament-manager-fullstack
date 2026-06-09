@@ -1,150 +1,221 @@
-import { useState, useEffect } from 'react';
-import { apiService } from './services/apiService';
-import './App.css';
+import { useEffect, useState } from "react";
+import { apiServicePromise } from "./services/api";
+import "./App.css";
 
-function App() {
+export default function App() {
+  const [apiService, setApiService] = useState(null);
+
   const [games, setGames] = useState([]);
-  const [tournaments, setTournaments] = useState([]); // State to hold tournament list
+  const [tournaments, setTournaments] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Form and navigation states
-  const [currentTab, setCurrentTab] = useState('view');
-  const [title, setTitle] = useState('');
-  const [tournamentId, setTournamentId] = useState('');
-  const [gameDate, setGameDate] = useState('');
-  const [editingGameId, setEditingGameId] = useState(null);
+  const [title, setTitle] = useState("");
+  const [tournamentId, setTournamentId] = useState("");
+  const [gameDate, setGameDate] = useState("");
+
+  const [newTournamentTitle, setNewTournamentTitle] = useState("");
+
+  /* ---------------- INIT API ---------------- */
 
   useEffect(() => {
-    loadData();
+    async function init() {
+      const service = await apiServicePromise;
+      setApiService(service);
+    }
+
+    init();
   }, []);
 
-  // Fetch both games and tournaments on initialization
-  const loadData = async () => {
+  /* ---------------- LOAD DATA ---------------- */
+
+  useEffect(() => {
+    if (!apiService) return;
+    loadData();
+  }, [apiService]);
+
+  async function loadData() {
     try {
       setLoading(true);
+
       const [gamesData, tournamentsData] = await Promise.all([
         apiService.getGames(),
-        apiService.getTournaments() // Ensure this function exists in apiService
+        apiService.getTournaments()
       ]);
+
       setGames(gamesData);
       setTournaments(tournamentsData);
       setError(null);
     } catch (err) {
-      setError('Could not connect to the API. Check backend status.');
+      console.error(err);
+      setError("Failed to load data");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const getMinDate = () => {
-    return new Date().toISOString().split('T')[0];
-  };
+  /* ---------------- GUARDS ---------------- */
 
-  const handleSubmit = async (e) => {
+  if (!apiService) {
+    return <div className="app-container">Initializing API...</div>;
+  }
+
+  if (loading) {
+    return <div className="app-container">Loading...</div>;
+  }
+
+  /* ---------------- CREATE GAME ---------------- */
+
+  async function handleCreateGame(e) {
     e.preventDefault();
 
-    const gamePayload = {
-      title,
-      tournamentId: parseInt(tournamentId),
-      time: new Date(gameDate).toISOString()
-    };
-
     try {
-      if (editingGameId) {
-        await apiService.updateGame(editingGameId, gamePayload);
-        setEditingGameId(null);
-      } else {
-        await apiService.createGame(gamePayload);
-      }
+      await apiService.createGame({
+        title,
+        tournamentId: parseInt(tournamentId),
+        time: new Date(gameDate).toISOString()
+      });
 
-      setTitle('');
-      setTournamentId('');
-      setGameDate('');
-      setCurrentTab('view');
-      await loadData(); // Reload all data
+      setTitle("");
+      setTournamentId("");
+      setGameDate("");
+
+      await loadData();
     } catch (err) {
       console.error(err);
-      setError('Failed to save. Ensure date is in the future and data is valid.');
+      setError("Failed to create game");
     }
-  };
+  }
+
+  /* ---------------- CREATE TOURNAMENT ---------------- */
+
+  async function handleCreateTournament() {
+    try {
+      await apiService.createTournament({
+        title: newTournamentTitle,
+        description: "Default tournament",
+        maxPlayers: 8,
+        date: new Date(Date.now() + 86400000).toISOString()
+      });
+
+      setNewTournamentTitle("");
+      await loadData();
+    } catch (err) {
+      console.error("TOURNAMENT ERROR:", err);
+
+      // 👇 extract backend validation message if it exists
+      const message =
+        err?.errors?.Title?.[0] ||
+        err?.message ||
+        "Failed to create tournament";
+
+      setError(message);
+    }
+  }
+
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="app-container">
-      <header>
-        <h1>🏆 Tournament Manager</h1>
-      </header>
+      <h1>🏆 Tournament Manager</h1>
 
-      <nav className="nav-tabs">
-        <button
-          className={`tab-btn ${currentTab === 'view' ? 'active' : ''}`}
-          onClick={() => setCurrentTab('view')}>📋 View Games</button>
-        <button
-          className={`tab-btn ${currentTab === 'create' ? 'active' : ''}`}
-          onClick={() => setCurrentTab('create')}>➕ Add/Edit Game</button>
-      </nav>
+      {error && <div className="error-box">{error}</div>}
 
-      {error && <div className="error-box">⚠️ {error}</div>}
+      <section className="form-section">
+        <h3>Create Tournament</h3>
 
-      {currentTab === 'view' ? (
-        <div>
-          {games.map(game => (
-            <div key={game.id} className="game-card">
-              <div>
-                <h3>{game.title}</h3>
-                <small>Date: {new Date(game.time).toLocaleDateString()}</small>
+        <input
+          value={newTournamentTitle}
+          onChange={(e) => setNewTournamentTitle(e.target.value)}
+          placeholder="Tournament name"
+        />
+
+        <button onClick={handleCreateTournament}>
+          Add Tournament
+        </button>
+
+        {/* ================= TOURNAMENT LIST ================= */}
+
+        <div style={{ marginTop: "20px" }}>
+          {tournaments.length === 0 ? (
+            <p>No tournaments available</p>
+          ) : (
+            tournaments.map(t => (
+              <div key={t.id} className="game-card">
+                <div>
+                  <h4>{t.title}</h4>
+                  <small>{t.description}</small>
+                </div>
+
+                <button
+                  className="btn btn-delete"
+                  onClick={async () => {
+                    try {
+                      await apiService.deleteTournament(t.id);
+                      await loadData();
+                    } catch (err) {
+                      setError("Failed to delete tournament");
+                    }
+                  }}
+                >
+                  Delete
+                </button>
               </div>
-              <div>
-                <button className="btn btn-edit" onClick={() => {
-                  setEditingGameId(game.id);
-                  setTitle(game.title);
-                  setTournamentId(game.tournamentId);
-                  setCurrentTab('create');
-                }}>Edit</button>
-                <button className="btn btn-delete" onClick={() => apiService.deleteGame(game.id).then(loadData)}>Delete</button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
-      ) : (
-        <section className="form-section">
-          <form onSubmit={handleSubmit}>
-            <label>Game Title</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              minLength={3}
-            />
+      </section>
+      {/* CREATE GAME */}
+      <form className="form-section" onSubmit={handleCreateGame}>
+        <h3>Create Game</h3>
 
-            <label>Tournament</label>
-            {/* VG improvement: Use select dropdown to prevent invalid IDs */}
-            <select
-              value={tournamentId}
-              onChange={(e) => setTournamentId(e.target.value)}
-              required
-            >
-              <option value="">-- Select a Tournament --</option>
-              {tournaments.map(t => (
-                <option key={t.id} value={t.id}>{t.title}</option>
-              ))}
-            </select>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Game title"
+          minLength={3}
+          required
+        />
 
-            <label>Tournament Date</label>
-            <input
-              type="date"
-              value={gameDate}
-              onChange={(e) => setGameDate(e.target.value)}
-              min={getMinDate()}
-              required
-            />
+        <select
+          value={tournamentId}
+          onChange={(e) => setTournamentId(e.target.value)}
+          required
+        >
+          <option value="">Select tournament</option>
+          {tournaments.map(t => (
+            <option key={t.id} value={t.id}>
+              {t.title}
+            </option>
+          ))}
+        </select>
 
-            <button className="btn btn-primary" type="submit">Save Game</button>
-          </form>
-        </section>
-      )}
+        <input
+          type="date"
+          value={gameDate}
+          onChange={(e) => setGameDate(e.target.value)}
+          required
+        />
+
+        <button type="submit">Create Game</button>
+      </form>
+
+      {/* LIST */}
+      <div>
+        {games.map(g => (
+          <div key={g.id} className="game-card">
+            <div>
+              <h3>{g.title}</h3>
+              <small>{new Date(g.time).toLocaleDateString()}</small>
+            </div>
+
+            <button onClick={() => apiService.deleteGame(g.id).then(loadData)}>
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
-export default App;
