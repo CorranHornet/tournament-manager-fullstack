@@ -1,0 +1,96 @@
+/* App.css */
+.app-container {
+  font-family: 'Segoe UI', sans-serif;
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 20px;
+  color: #333;
+}
+
+header {
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #e5e7eb;
+}
+
+.tab-btn.active {
+  background-color: #2563eb;
+  color: white;
+}
+
+.error-box {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.game-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-section {
+  background-color: #f9fafb;
+  padding: 25px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  color: white;
+}
+
+.btn-primary {
+  background-color: #10b981;
+}
+
+.btn-edit {
+  background-color: #f59e0b;
+  margin-right: 5px;
+}
+
+.btn-delete {
+  background-color: #dc2626;
+}
+
+.btn-cancel {
+  background-color: #6b7280;
+}
