@@ -66,4 +66,4 @@ Thumbs.db
 logs/
 *.log
 
-// Trigger build
+# Trigger CI build
